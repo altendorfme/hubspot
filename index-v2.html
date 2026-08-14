@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>HubSpot Form</title>
+
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .hs-form-frame {
+            margin: -40px !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="root"></div>
+
+    <!-- React -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Babel para permitir JSX diretamente no HTML -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+
+        const { useEffect } = React;
+
+        /**
+         * HubSpotForm
+         *
+         * Props:
+         * - formId
+         * - portalId
+         * - region
+         */
+        function HubSpotForm({
+            formId,
+            portalId = "6514799",
+            region = "na1"
+        }) {
+
+            useEffect(() => {
+
+                // Evita adicionar o script mais de uma vez
+                const scriptId = `hubspot-forms-${portalId}`;
+
+                let script = document.getElementById(scriptId);
+
+                if (!script) {
+                    script = document.createElement("script");
+
+                    script.id = scriptId;
+                    script.src = `https://js.hsforms.net/forms/embed/v2.js`;
+                    script.defer = true;
+
+                    document.body.appendChild(script);
+                }
+
+                return () => {
+                    // Não removemos o script aqui.
+                    //
+                    // Isso evita problemas caso outro componente
+                    // HubSpotForm esteja usando o mesmo portal.
+                };
+
+            }, [portalId]);
+
+            return (
+                <div
+                    className="hs-form-frame"
+                    data-region={region}
+                    data-form-id={formId}
+                    data-portal-id={portalId}
+                    style={{ minHeight: "400px" }}
+                />
+            );
+        }
+
+
+        /*
+         * ==========================================
+         * CONFIGURAÇÃO
+         * ==========================================
+         */
+
+        const hubspotForm = {
+            formId: "027454ef-1313-45c8-a7d5-2fc46e9ac969",
+
+            portalId: "6514799",
+
+            region: "na1"
+        };
+
+
+        /*
+         * ==========================================
+         * RENDER
+         * ==========================================
+         */
+
+        const root = ReactDOM.createRoot(
+            document.getElementById("root")
+        );
+
+        root.render(
+            <HubSpotForm
+                formId={hubspotForm.formId}
+                portalId={hubspotForm.portalId}
+                region={hubspotForm.region}
+            />
+        );
+
+    </script>
+
+</body>
+</html>
