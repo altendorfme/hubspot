@@ -29,15 +29,68 @@
     <div id="root"></div>
 
     <!-- React -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script
+        crossorigin
+        src="https://unpkg.com/react@18/umd/react.development.js">
+    </script>
 
-    <!-- Babel para permitir JSX diretamente no HTML -->
+    <script
+        crossorigin
+        src="https://unpkg.com/react-dom@18/umd/react-dom.development.js">
+    </script>
+
+    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script type="text/babel">
 
-        const { useEffect } = React;
+        const { useEffect, useRef } = React;
+
+        /**
+         * Carrega o script da API v2 do HubSpot uma única vez.
+         */
+        function loadHubSpotScript() {
+            return new Promise((resolve, reject) => {
+
+                // Se o HubSpot já estiver disponível
+                if (window.hbspt?.forms) {
+                    resolve(window.hbspt);
+                    return;
+                }
+
+                // Verifica se o script já existe
+                const existingScript = document.querySelector(
+                    'script[src="https://js.hsforms.net/forms/embed/v2.js"]'
+                );
+
+                if (existingScript) {
+
+                    existingScript.addEventListener("load", () => {
+                        resolve(window.hbspt);
+                    });
+
+                    existingScript.addEventListener("error", reject);
+
+                    return;
+                }
+
+                // Cria o script da API v2
+                const script = document.createElement("script");
+
+                script.charset = "utf-8";
+                script.type = "text/javascript";
+                script.src = "https://js.hsforms.net/forms/embed/v2.js";
+
+                script.onload = () => {
+                    resolve(window.hbspt);
+                };
+
+                script.onerror = reject;
+
+                document.body.appendChild(script);
+            });
+        }
+
 
         /**
          * HubSpotForm
@@ -53,39 +106,63 @@
             region = "na1"
         }) {
 
+            const containerRef = useRef(null);
+
             useEffect(() => {
 
-                // Evita adicionar o script mais de uma vez
-                const scriptId = `hubspot-forms-${portalId}`;
+                let mounted = true;
 
-                let script = document.getElementById(scriptId);
+                async function initializeForm() {
 
-                if (!script) {
-                    script = document.createElement("script");
+                    try {
 
-                    script.id = scriptId;
-                    script.src = `https://js.hsforms.net/forms/embed/v2.js`;
-                    script.defer = true;
+                        const hbspt = await loadHubSpotScript();
 
-                    document.body.appendChild(script);
+                        if (!mounted || !containerRef.current) {
+                            return;
+                        }
+
+                        // Limpa o container antes de criar o formulário
+                        containerRef.current.innerHTML = "";
+
+                        hbspt.forms.create({
+
+                            portalId: portalId,
+
+                            formId: formId,
+
+                            region: region,
+
+                            target: containerRef.current
+
+                        });
+
+                    } catch (error) {
+
+                        console.error(
+                            "Erro ao carregar o formulário HubSpot:",
+                            error
+                        );
+
+                    }
                 }
 
+                initializeForm();
+
                 return () => {
-                    // Não removemos o script aqui.
-                    //
-                    // Isso evita problemas caso outro componente
-                    // HubSpotForm esteja usando o mesmo portal.
+                    mounted = false;
                 };
 
-            }, [portalId]);
+            }, [formId, portalId, region]);
+
 
             return (
                 <div
+                    ref={containerRef}
                     className="hs-form-frame"
-                    data-region={region}
-                    data-form-id={formId}
-                    data-portal-id={portalId}
-                    style={{ minHeight: "400px" }}
+                    style={{
+                        minHeight: "400px"
+                    }}
                 />
             );
         }
@@ -98,11 +175,15 @@
          */
 
         const hubspotForm = {
-            formId: "027454ef-1313-45c8-a7d5-2fc46e9ac969",
 
-            portalId: "6514799",
+            formId:
+                "027454ef-1313-45c8-a7d5-2fc46e9ac969",
 
-            region: "na1"
+            portalId:
+                "6514799",
+
+            region:
+                "na1"
         };
 
 
