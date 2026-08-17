@@ -44,7 +44,7 @@
 
     <script type="text/babel">
 
-        const { useEffect, useRef } = React;
+        const { useEffect } = React;
 
         /**
          * Carrega o script da API v2 do HubSpot uma única vez.
@@ -100,73 +100,39 @@
          * - portalId
          * - region
          */
-        function HubSpotForm({
-            formId,
-            portalId = "6514799",
-            region = "na1"
-        }) {
+ function HubSpotForm({ formId, portalId = "6514799", region = "na1" }) { useEffect(() => { let mounted = true; async function initializeForm() { try { const hbspt = await loadHubSpotScript();
 
-            const containerRef = useRef(null);
-
-            useEffect(() => {
-
-                let mounted = true;
-
-                async function initializeForm() {
-
-                    try {
-
-                        const hbspt = await loadHubSpotScript();
-
-                        if (!mounted || !containerRef.current) {
-                            return;
-                        }
-
-                        // Limpa o container antes de criar o formulário
-                        containerRef.current.innerHTML = "";
-
-                        hbspt.forms.create({
-
-                            portalId: portalId,
-
-                            formId: formId,
-
-                            region: region,
-
-                            target: containerRef.current
-
-                        });
-
-                    } catch (error) {
-
-                        console.error(
-                            "Erro ao carregar o formulário HubSpot:",
-                            error
-                        );
-
-                    }
-                }
-
-                initializeForm();
-
-                return () => {
-                    mounted = false;
-                };
-
-            }, [formId, portalId, region]);
-
-
-            return (
-                <div
-                    ref={containerRef}
-                    className="hs-form-frame"
-                    style={{
-                        minHeight: "400px"
-                    }}
-                />
+            if (!mounted) {
+                return;
+            }
+            hbspt.forms.create({
+                portalId,
+                formId,
+                region,
+                target: "#hubspot-form-container"
+            });
+        } catch (error) {
+            console.error(
+                "Erro ao carregar o formulário HubSpot:",
+                error
             );
         }
-
+    }
+    initializeForm();
+    return () => {
+        mounted = false;
+    };
+}, [formId, portalId, region]);
+return (
+    <div
+        id="hubspot-form-container"
+        className="hs-form-frame"
+        style={{
+            minHeight: "400px"
+        }}
+    />
+);
+}
 
         /*
          * ==========================================
